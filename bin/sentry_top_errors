@@ -1,0 +1,27 @@
+#!/usr/bin/env ruby
+
+require_relative '../lib/sentry_top_errors'
+
+SENTRY_KEY = ENV['SENTRY_KEY']
+
+if !SENTRY_KEY || SENTRY_KEY == ''
+  STDERR.puts "Env var SENTRY_KEY is reuired"
+  exit 1
+end
+
+REPORT_TYPE = ENV['SENTRY_REPORT'] ? ENV['SENTRY_REPORT'].to_sym : :text
+
+if REPORT_TYPE != :text && REPORT_TYPE != :tabs && REPORT_TYPE != :table && REPORT_TYPE != :html
+  STDERR.puts "Env var SENTRY_REPORT should be one of those: text, tabs, table, html. Default is text"
+  exit 1
+end
+
+client = SentryTopErrors::SentryClient.new(sentry_key: SENTRY_KEY, enable_cache: !!ENV['SEMTRY_DATA_CACHE'])
+
+if ENV['DROP_CACHE']
+  client.drop_cache
+end
+
+reporter = SentryTopErrors::Reporter.new(client: client, report_type: :html)
+reporter.fetch_data
+puts r.generate_report

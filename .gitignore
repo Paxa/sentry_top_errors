@@ -1,0 +1,4 @@
+sentry_cache
+index.html
+Gemfile.lock
+try_sentry_checker.rb
