@@ -11,5 +11,5 @@ Gem::Specification.new do |s|
   s.licenses          = ['MIT', 'GPL-2.0']
 
   s.add_runtime_dependency 'excon', "~> 0.100.0"
-  s.add_runtime_dependency 'progress_bar', ">= 1.0.5"
+  s.add_runtime_dependency 'progress_bar', '>= 1.0.5', '< 2.0.0'
 end
