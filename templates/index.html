@@ -1,0 +1,358 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Sentry Errors</title>
+
+    <style>
+      body {
+        background: linear-gradient(0deg, rgba(252,217,182,1) 0%, rgba(160,206,219,1) 100%);
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol";
+        font-size: 14px;
+      }
+
+      .page-content {
+        height: 100%;
+        min-height: 400px;
+        width: 92%;
+        max-width: 1200px;
+        margin: 30px auto;
+        background: #fff;
+        padding: 25px;
+        border-radius: 12px;
+        opacity: 0.95;
+      }
+
+      h1 {
+        font-size: 1.5em;
+        background: #9d4f4f;
+        margin: -25px -25px 35px -25px;
+        padding: 12px 25px;
+        border-radius: 12px 12px 0 0;
+        color: white;
+      }
+
+      h1 a {
+        color: white;
+        text-decoration: none;
+      }
+
+      table.rows-table {
+        margin: 20px 0;
+        border-spacing: 0px;
+        border-collapse: collapse;
+      }
+
+      table.rows-table td {
+        vertical-align: top;
+      }
+
+      table.rows-table td a {
+        color: #000;
+      }
+
+      table.rows-table td, table.rows-table th {
+        padding: 3px 7px;
+        border: 1px solid #cfcfcf;
+      }
+
+      tr.is-non-prod-issue, tr.is-non-prod-issue td a {
+        color: #36487d;
+        background: #f5f5f5;
+      }
+
+      td.issue-count {
+        font-weight: bold;
+      }
+
+      td.issue-name {
+        /* word-break: break-all; */
+      }
+
+      td.issue-cause {
+        word-break: break-all;
+        max-width: 240px;
+        font-size: 80%;
+      }
+
+      td.project-name {
+        word-break: break-all;
+        max-width: 260px;
+      }
+
+      .full-width {
+        width: 100%;
+        max-width: 100%;
+      }      
+    </style>
+  </head>
+  <body>
+    <div class='page-content'>
+      <h1>
+        <a href=''>Sentry Errors</a>
+      </h1>
+
+      <h2>Repeating Issues</h2>
+
+      <table class='rows-table full-width' id="issues-table">
+        <thead>
+          <tr>
+            <th>Count</th>
+            <th>Project</th>
+            <th>Issue</th>
+            <th>Cause</th>
+          </tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+
+      <h2>New Issues</h2>
+
+      <table class='rows-table full-width' id="new-issues-table">
+        <thead>
+          <tr>
+            <th>Count</th>
+            <th>Project</th>
+            <th>Issue</th>
+            <th>Cause</th>
+          </tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+    </div>
+
+    <script>
+      var ALL_ISSUE_COUNTS = ['ALL_ISSUE_COUNTS_PLACEHOLDER'];
+      var NEW_ISSUE_COUNTS = ['NEW_ISSUE_COUNTS_PLACEHOLDER'];
+    </script>
+    <script>
+
+      // Some sort of replacement for jquery
+      ///
+      // Usage:
+      //   $(selector, paretn) - find an element
+      //   $$(selector, paretn) - find elements, return as array
+      //   $.element(html, {class: '', appendTo: '', html: '', text: '', hide: '', classes: ['']}) - create element
+      //   $.ajax({url: '', method: 'GET', data: '', contentType: '', accepts: '', headers: '', before: fn, process: fn, uploadProgress: fn, complete: fn, error: fn, })
+      //   $.ready - $(document).ready
+      //   $.matches - polifill
+      //   $.closest - same as jquery
+
+      var $ = function (selector, element) {
+        if (selector[0] == '<') {
+          return $.element(selector, element);
+        }
+        return (element || document).querySelector(selector);
+      };
+
+      var $$ = function (selector, element) {
+        return Array.from((element || document).querySelectorAll(selector));
+      };
+
+      $.element = function (html, attributes) {
+        if (!attributes) attributes = {};
+        var element;
+
+        if (html[0] == '<') {
+          var div = document.createElement('div');
+          div.innerHTML = html;
+          element = div.childNodes[0];
+        } else {
+          var element = document.createElement(html);
+        }
+
+        Object.keys(attributes).forEach(function (key) {
+          var value = attributes[key];
+
+          if (key == 'class') {
+            element.className = value;
+          } else if (key == 'classes') {
+            value.forEach(function (className) {
+              el.classList.add(className);
+            });
+          } else if (key == 'appendTo') {
+            value.appendChild(element);
+          } else if (key == 'html') {
+            element.innerHTML = value;
+          } else if (key == 'text') {
+            element.innerText = value;
+          } else if (key == 'hide') {
+            element.style.display = 'none';
+          } else {
+            element.setAttribute(key, value);
+          }
+        });
+
+        return element;
+      };
+
+      $.ajax = function (options) {
+        var request = new XMLHttpRequest();
+
+        if (options.query) {
+          var query = Object.keys(options.query).map(function (k) {
+            return encodeURIComponent(k) + '=' + encodeURIComponent(options.query[k]);
+          }).join('&');
+          options.url += (options.url.includes("?") ? "&" : "?") + query;
+        }
+
+        request.open(options.method || 'GET', options.url);
+
+        options.before && options.before(request);
+
+        if (options.contentType == 'json') {
+          request.setRequestHeader("Content-type", "application/json");
+        } else if (options.contentType) {
+          request.setRequestHeader("Content-type", options.contentType);
+        } else if (options.data && !(options.data instanceof FormData)) {
+          request.setRequestHeader("Content-type", "application/x-www-form-urlencoded");
+        }
+
+        request.setRequestHeader("X-Requested-With", "XMLHttpRequest");
+        if (options.accepts) {
+          request.setRequestHeader('Accept', '*/*;q=0.5, ' + options.accepts);
+        }
+
+        if (options.headers) {
+          Object.keys(options.headers).forEach(function (key) {
+            request.setRequestHeader(key, options.headers[key]);
+          });
+        }
+
+        if (options.process) {
+          request.addEventListener("progress", function (event) {
+            options.process(request, event);
+          });
+        }
+        if (options.uploadProgress) {
+          request.upload.addEventListener("progress", function (event) {
+            options.uploadProgress(request, event);
+          });
+        }
+
+        request.addEventListener("load", function (event) {
+          //console.log('Request Status', request.status, request, event);
+          try {
+            var data;
+            var contentType = request.getResponseHeader('Content-type') || "";
+            if (contentType == "application/json" || contentType.match(/^application\/json/)) {
+              try {
+                data = JSON.parse(request.responseText);
+                request.responseJSON = data;
+              } catch (e) {
+                console.error(e);
+              }
+            }
+            if (request.status < 400) {
+              options.success && options.success(request, data, event);
+            } else {
+              options.error && options.error(request, event);
+            }
+          } catch (e) {
+            console.error(e);
+          }
+          options.complete && options.complete(request, event);
+        });
+
+        ['error', 'abort'].map(function (event) {
+          request.addEventListener(event, function (event) {
+            try {
+              options.error && options.error(request, event);
+            } catch (e) {
+              console.error(e);
+            }
+            options.complete && options.complete(request, event);
+          });
+        });
+
+        request.send(options.data);
+      };
+
+      $.ready = function (fn) {
+        if (document.readyState != 'loading') {
+          fn();
+        } else {
+          document.addEventListener('DOMContentLoaded', fn);
+        }
+      };
+
+      $.matches = function (el, selector) {
+        var p = Element.prototype;
+        var f = p.matches || p.webkitMatchesSelector || p.mozMatchesSelector || p.msMatchesSelector || function(s) {
+          return [].indexOf.call(document.querySelectorAll(s), this) !== -1;
+        };
+        return f.call(el, selector);
+      };
+
+      $.closest = function (element, selector) {
+        var parent = element;
+        while (parent && !$.matches(parent, selector)) {
+          parent = parent.parentNode;
+          if (parent instanceof HTMLDocument) {
+            return null;
+          }
+        }
+
+        return parent;
+      };
+
+      $.onClickOutside = function (element, optoins, callback) {
+        if (!optoins) optoins = {};
+
+        document.addEventListener('click', function cb(event) {
+          var parent = event.target;
+          while (!(parent instanceof HTMLDocument)) {
+            if (parent == element) {
+              //console.log('click inside');
+              return;
+            }
+            parent = parent.parentNode;
+          }
+
+          //console.log('click outside');
+          callback(event);
+
+          if (optoins.once) {
+            // for browsers that don't support "once: true"
+            event.currentTarget.removeEventListener(event.type, cb);
+          }
+        }, {once: optoins.once});
+      };
+    </script>
+
+    <script>
+      var issuesTable = $('#issues-table tbody');
+
+      ALL_ISSUE_COUNTS.forEach(issue => {
+        var tr = $.element('tr', {
+          appendTo: issuesTable,
+          class: issue.is_production ? 'is-prod-issue' : 'is-non-prod-issue',
+        });
+
+        $.element('td', {text: issue.issue_count, appendTo: tr, class: 'issue-count'});
+        var projectCell = $.element('td', {appendTo: tr, class: 'project-name'});
+        $.element('a', {href: issue.project_url, text: issue.project_name, target: '_blank', appendTo: projectCell})
+        var issueCell = $.element('td', {appendTo: tr, class: 'issue-name'});
+        $.element('a', {href: issue.issue_link, text: issue.issue, target: '_blank', appendTo: issueCell})
+        $.element('td', {text: issue.culprit, appendTo: tr, class: 'issue-cause'});
+      });
+
+      var issuesTable = $('#new-issues-table tbody');
+
+      NEW_ISSUE_COUNTS.forEach(issue => {
+        var tr = $.element('tr', {
+          appendTo: issuesTable,
+          class: issue.is_production ? 'is-prod-issue' : 'is-non-prod-issue',
+        });
+
+        $.element('td', {text: issue.issue_count, appendTo: tr, class: 'issue-count'});
+        var projectCell = $.element('td', {appendTo: tr, class: 'project-name'});
+        $.element('a', {href: issue.project_url, text: issue.project_name, target: '_blank', appendTo: projectCell})
+        var issueCell = $.element('td', {appendTo: tr, class: 'issue-name'});
+        $.element('a', {href: issue.issue_link, text: issue.issue, target: '_blank', appendTo: issueCell})
+        $.element('td', {text: issue.culprit, appendTo: tr, class: 'issue-cause'});
+      });
+    </script>
+  </body>
+</html>
