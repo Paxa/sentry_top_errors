@@ -65,7 +65,9 @@ class SentryTopErrors::Reporter
           culprit: issue['culprit'],
           issue_link: issue['permalink'],
           issue_count: count_in_24h,
-          is_production: is_production
+          is_production: is_production,
+          assigned_to: issue.dig('assignedTo', 'name'),
+          assigned_to_email: issue.dig('assignedTo', 'email'),
         }
 
         if count_in_24h > @threshold_24h

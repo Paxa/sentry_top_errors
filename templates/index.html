@@ -15,9 +15,9 @@
       .page-content {
         height: 100%;
         min-height: 400px;
-        width: 92%;
-        max-width: 1200px;
-        margin: 30px auto;
+        width: 90%;
+        max-width: 1400px;
+        margin: 35px auto;
         background: #fff;
         padding: 25px;
         border-radius: 12px;
@@ -26,7 +26,7 @@
 
       h1 {
         font-size: 1.5em;
-        background: #9d4f4f;
+        background: #87358e;
         margin: -25px -25px 35px -25px;
         padding: 12px 25px;
         border-radius: 12px 12px 0 0;
@@ -53,8 +53,13 @@
       }
 
       table.rows-table td, table.rows-table th {
-        padding: 3px 7px;
+        padding: 4px 7px;
         border: 1px solid #cfcfcf;
+      }
+
+      .full-width {
+        width: 100%;
+        max-width: 100%;
       }
 
       tr.is-non-prod-issue, tr.is-non-prod-issue td a {
@@ -81,10 +86,11 @@
         max-width: 260px;
       }
 
-      .full-width {
-        width: 100%;
-        max-width: 100%;
-      }      
+      td.issue-assignee {
+        font-size: 80%;
+        overflow: ellipsis;
+        max-width: 100px;
+      }
     </style>
   </head>
   <body>
@@ -95,7 +101,7 @@
 
       <p>Generated at: <b>REPORT_GENERATE_DATE</b>, for sentry organization <b>REPORT_SENTRY_ORG</b></p>
 
-      <h2>Repeating Issues</h2>
+      <h2>Repeating Issues (in last 24h)</h2>
 
       <table class='rows-table full-width' id="issues-table">
         <thead>
@@ -104,6 +110,7 @@
             <th>Project</th>
             <th>Issue</th>
             <th>Cause</th>
+            <th>User</th>
           </tr>
         </thead>
         <tbody></tbody>
@@ -118,6 +125,7 @@
             <th>Project</th>
             <th>Issue</th>
             <th>Cause</th>
+            <th>User</th>
           </tr>
         </thead>
         <tbody></tbody>
@@ -324,9 +332,7 @@
     </script>
 
     <script>
-      var issuesTable = $('#issues-table tbody');
-
-      ALL_ISSUE_COUNTS.forEach(issue => {
+      var generateRow = (issue, table) => {
         var tr = $.element('tr', {
           appendTo: issuesTable,
           class: issue.is_production ? 'is-prod-issue' : 'is-non-prod-issue',
@@ -338,22 +344,21 @@
         var issueCell = $.element('td', {appendTo: tr, class: 'issue-name'});
         $.element('a', {href: issue.issue_link, text: issue.issue, target: '_blank', appendTo: issueCell})
         $.element('td', {text: issue.culprit, appendTo: tr, class: 'issue-cause'});
+        if (issue.assigned_to) {
+          $.element('td', {text: issue.assigned_to, appendTo: tr, class: 'issue-assignee', title: issue.assigned_to_email});
+        } else {
+          $.element('td', {appendTo: tr});
+        }
+      }
+
+      var issuesTable = $('#issues-table tbody');
+      ALL_ISSUE_COUNTS.forEach(issue => {
+        generateRow(issue, issuesTable);
       });
 
-      var issuesTable = $('#new-issues-table tbody');
-
+      var newIssuesTable = $('#new-issues-table tbody');
       NEW_ISSUE_COUNTS.forEach(issue => {
-        var tr = $.element('tr', {
-          appendTo: issuesTable,
-          class: issue.is_production ? 'is-prod-issue' : 'is-non-prod-issue',
-        });
-
-        $.element('td', {text: issue.issue_count, appendTo: tr, class: 'issue-count'});
-        var projectCell = $.element('td', {appendTo: tr, class: 'project-name'});
-        $.element('a', {href: issue.project_url, text: issue.project_name, target: '_blank', appendTo: projectCell})
-        var issueCell = $.element('td', {appendTo: tr, class: 'issue-name'});
-        $.element('a', {href: issue.issue_link, text: issue.issue, target: '_blank', appendTo: issueCell})
-        $.element('td', {text: issue.culprit, appendTo: tr, class: 'issue-cause'});
+        generateRow(issue, newIssuesTable);
       });
     </script>
   </body>
