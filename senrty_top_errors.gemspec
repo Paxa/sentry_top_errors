@@ -1,6 +1,6 @@
 Gem::Specification.new do |s|
   s.name              = "sentry_top_errors"
-  s.version           = "0.1.1"
+  s.version           = "0.1.2"
   s.summary           = "Generate top errors report for sentry"
   s.description       = ""
   s.author            = "Pavel Evstigneev"

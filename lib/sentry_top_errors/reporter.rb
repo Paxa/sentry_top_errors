@@ -1,5 +1,3 @@
-require 'progress_bar'
-
 class SentryTopErrors::Reporter
   def initialize(client:, prod_regex: /^p-/, threshold_24h: 30, threshold_new: 10, new_days_num: 1, report_type: :html)
     @client = client
@@ -139,8 +137,12 @@ class SentryTopErrors::Reporter
     elsif @report_type == :html
       tpl_dir = File.join(File.expand_path(File.dirname(__FILE__) + "/../.."), "templates")
       html_content = File.read(tpl_dir + "/index.html")
+      project_orgs = @projects.map {|pr| pr['organization']['name'] }.uniq.join(", ")
+
       html_content.sub!(%{['ALL_ISSUE_COUNTS_PLACEHOLDER']}, JSON.pretty_generate(issue_counts))
       html_content.sub!(%{['NEW_ISSUE_COUNTS_PLACEHOLDER']}, JSON.pretty_generate(new_issues))
+      html_content.sub!("REPORT_GENERATE_DATE", Time.now.strftime("%F %T %Z"))
+      html_content.sub!("REPORT_SENTRY_ORG", project_orgs)
 
       puts "Saved index.html"
       File.write("./index.html", html_content)

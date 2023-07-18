@@ -2,6 +2,7 @@ require 'excon'
 require 'json'
 require 'yaml'
 require 'time'
+require 'progress_bar'
 
 module SentryTopErrors
 end

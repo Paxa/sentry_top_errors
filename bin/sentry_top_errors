@@ -24,4 +24,4 @@ end
 
 reporter = SentryTopErrors::Reporter.new(client: client, report_type: :html)
 reporter.fetch_data
-puts r.generate_report
+puts reporter.generate_report
