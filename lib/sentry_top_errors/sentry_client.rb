@@ -13,11 +13,17 @@ class SentryTopErrors::SentryClient
     @enable_cache = enable_cache
   end
 
-  def http(method, path, options = {})
+  def http(method, path, options = {}, retry_count = 0)
     @conn ||= Excon.new(SENTRY_HOST, HTTP_OPTIONNS)
     options[:headers] ||= {}
     options[:headers]['Authorization'] ||= "Bearer #{@sentry_key}"
     response = @conn.request({method: method, path: path}.merge(options))
+
+    # status 429 = too many requests
+    if response.status == 429 && retry_count < 4
+      sleep(0.2)
+      return http(method, path, options, retry_count + 1)
+    end
 
     SentryTopErrors::ApiResponse.new_from_res(response)
   end

@@ -334,7 +334,7 @@
     <script>
       var generateRow = (issue, table) => {
         var tr = $.element('tr', {
-          appendTo: issuesTable,
+          appendTo: table,
           class: issue.is_production ? 'is-prod-issue' : 'is-non-prod-issue',
         });
 
