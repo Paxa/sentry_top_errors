@@ -1,6 +1,6 @@
 Gem::Specification.new do |s|
   s.name              = "sentry_top_errors"
-  s.version           = "0.1.4"
+  s.version           = "0.1.5"
   s.summary           = "Generate top errors report for sentry"
   s.description       = ""
   s.author            = "Pavel Evstigneev"
@@ -10,6 +10,6 @@ Gem::Specification.new do |s|
   s.files             = `git ls-files`.split("\n")
   s.licenses          = ['MIT', 'GPL-2.0']
 
-  s.add_runtime_dependency 'excon', "~> 0.100.0"
+  s.add_runtime_dependency 'excon', "~> 0.102.0"
   s.add_runtime_dependency 'progress_bar', '>= 1.0.5', '< 2.0.0'
 end
