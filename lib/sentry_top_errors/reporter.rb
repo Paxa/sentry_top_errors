@@ -14,6 +14,12 @@ class SentryTopErrors::Reporter
     bar.write
 
     @projects = @client.list_projects
+
+    if @projects.is_a?(Hash)
+      puts "ERROR: #{@projects}"
+      exit 1
+    end
+
     bar.increment!
     bar.max = @projects.size + 1
 
